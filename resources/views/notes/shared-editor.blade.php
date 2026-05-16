@@ -518,6 +518,4 @@ async function pollReadOnly() {
 }
 setInterval(pollReadOnly, 5000);
 @endif
-</script>
-@endpush
 @endsection
