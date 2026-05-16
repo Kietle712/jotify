@@ -1035,18 +1035,6 @@
         });
     });
 
-    // ─── Pre-populate _notesCache khi load trang (server-rendered) ──────────────
-    // Cho phép switchView re-render đúng layout ngay cả khi chưa search
-    if (!window._notesCache) {
-        const initParams = new URLSearchParams();
-        if (currentLabels) initParams.set('labels', currentLabels);
-        fetch('/notes?' + initParams.toString(), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(data => { if (Array.isArray(data.notes)) window._notesCache = data.notes; })
-        .catch(() => {});
-    }
 
 
     // â”€â”€â”€ Swipe-to-action gestures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

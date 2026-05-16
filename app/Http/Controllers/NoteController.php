@@ -56,7 +56,7 @@ class NoteController extends Controller
                         'first_image_url'=> $note->images->first()
                             ? asset('storage/' . $note->images->first()->image_path)
                             : null,
-                        'list_images'    => $note->images->take(2)->map(fn($img) =>
+                        'images_urls'    => $note->images->map(fn($img) =>
                             asset('storage/' . $img->image_path)
                         )->values(),
                     ];
