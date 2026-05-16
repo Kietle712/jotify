@@ -78,7 +78,7 @@
                      class="w-full h-32 object-cover cursor-zoom-in"
                      alt="{{ $image->original_name }}"
                      onclick="openSharedLightbox('{{ asset('storage/' . $image->image_path) }}', '{{ addslashes($image->original_name) }}')">
-                <div class="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <div class="absolute inset-0 bg-black/50 attachment-overlay flex items-center justify-center pointer-events-none">
                     <button onclick="deleteSharedImage({{ $image->id }})"
                             class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors pointer-events-auto" title="Delete">
                         <span class="material-icons-outlined text-lg">delete</span>
@@ -134,23 +134,22 @@
 @endif
 
 {{-- ── Shared Image Lightbox ────────────────────────────────────────────── --}}
-<div id="shared-lightbox"
-     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);
-            -webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;cursor:zoom-out;"
-     onclick="closeSharedLightbox()">
-    <button onclick="closeSharedLightbox()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.15);
-            border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;
-            justify-content:center;color:#fff;transition:background 0.2s;" onmouseenter="this.style.background='rgba(255,255,255,0.3)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'">
-        <span class="material-icons-outlined" style="font-size:1.5rem;">close</span>
-    </button>
-    <img id="shared-lightbox-img" src="" alt=""
-         style="max-width:90vw;max-height:88vh;object-fit:contain;border-radius:0.5rem;
-                box-shadow:0 25px 60px rgba(0,0,0,0.6);cursor:default;"
-         onclick="event.stopPropagation()">
-    <p id="shared-lightbox-caption"
-       style="position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);
-              color:rgba(255,255,255,0.7);font-size:0.75rem;max-width:80vw;text-align:center;
-              text-overflow:ellipsis;overflow:hidden;white-space:nowrap;"></p>
+<div id="shared-image-viewer" class="hidden fixed top-0 left-0 right-0 bottom-0 z-50 overflow-y-auto bg-black/70" aria-hidden="true" onclick="if(event.target.id==='shared-image-viewer') closeSharedLightbox();">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="max-w-[95vw] w-full">
+            <div class="bg-card rounded-xl overflow-hidden shadow-xl flex flex-col max-h-[95vh]">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+                    <div id="shared-image-viewer-title" class="text-sm font-semibold text-body truncate"></div>
+                    <button type="button" onclick="closeSharedLightbox()" class="p-3 rounded-full hover:bg-muted/10 transition-colors flex-shrink-0" aria-label="Close image viewer">
+                        <span class="material-icons-outlined text-lg">close</span>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-hidden p-4 flex items-center justify-center min-h-0">
+                    <img id="shared-image-viewer-img" src="" alt="" class="viewer-img max-w-full max-h-full object-contain">
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -159,27 +158,70 @@ const shareId = {{ $share->id }};
 
 // ── Shared Lightbox ──────────────────────────────────────────────────────────
 function openSharedLightbox(url, caption) {
-    const lb  = document.getElementById('shared-lightbox');
-    const img = document.getElementById('shared-lightbox-img');
-    const cap = document.getElementById('shared-lightbox-caption');
-    if (!lb || !img) return;
+    const modal = document.getElementById('shared-image-viewer');
+    const img = document.getElementById('shared-image-viewer-img');
+    const title = document.getElementById('shared-image-viewer-title');
+    if (!modal || !img) return;
     img.src = url;
     img.alt = caption || '';
-    if (cap) cap.textContent = caption || '';
-    lb.style.display = 'flex';
-    lb.getBoundingClientRect(); // force reflow for transition
-    lb.style.opacity = '1';
+    if (title) title.textContent = caption || '';
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 }
 function closeSharedLightbox() {
-    const lb = document.getElementById('shared-lightbox');
-    if (!lb) return;
-    lb.style.display = 'none';
+    const modal = document.getElementById('shared-image-viewer');
+    const img = document.getElementById('shared-image-viewer-img');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    if (img) img.src = '';
     document.body.style.overflow = '';
 }
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeSharedLightbox();
 });
+</script>
+
+<style>
+.viewer-img {
+    max-width: 90vw;
+    max-height: 85vh;
+}
+@media (min-width: 1024px) {
+    .viewer-img {
+        max-width: 70vw;
+        max-height: 70vh;
+    }
+}
+@media (min-width: 1280px) {
+    .viewer-img {
+        max-width: 60vw;
+        max-height: 60vh;
+    }
+}
+@media (min-width: 1536px) {
+    .viewer-img {
+        max-width: 50vw;
+        max-height: 50vh;
+    }
+}
+.attachment-overlay {
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+.group:hover .attachment-overlay {
+    opacity: 1;
+}
+@media (hover: none), (pointer: coarse) {
+    .attachment-overlay {
+        opacity: 1 !important;
+    }
+}
+</style>
 
 @if($share->permission === 'edit')
 
@@ -335,7 +377,7 @@ async function uploadSharedImages(files) {
                 <div class="relative group rounded-xl overflow-hidden bg-hover" id="shared-image-${r.image.id}">
                     <img src="${r.image.url}" class="w-full h-32 object-cover cursor-zoom-in" alt="${r.image.original_name}"
                          onclick="openSharedLightbox('${r.image.url}', '${r.image.original_name.replace(/'/g, "\\'")}')">
-                    <div class="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <div class="absolute inset-0 bg-black/50 attachment-overlay flex items-center justify-center pointer-events-none">
                         <button onclick="deleteSharedImage(${r.image.id})"
                                 class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors pointer-events-auto" title="Delete">
                             <span class="material-icons-outlined text-lg">delete</span>
