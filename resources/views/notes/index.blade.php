@@ -1433,6 +1433,23 @@
             if (pinIcon) { pinIcon.style.color = nowPinned ? '#f59e0b' : ''; }
             if (swipeLabel) swipeLabel.textContent = nowPinned ? 'Unpin' : 'Pin';
             _updatePinBadge(card, nowPinned);
+
+            // Sync pin state back into _notesCache so switchView re-renders correctly
+            if (window._notesCache) {
+                const cached = window._notesCache.find(n => String(n.id) === String(noteId));
+                if (cached) {
+                    cached.is_pinned = nowPinned;
+                    cached.pinned_at_ts = nowPinned ? (result.pinned_at_ts || Math.floor(Date.now() / 1000)) : 0;
+                }
+                window._notesCache.sort((a, b) => {
+                    const aPin = a.is_pinned ? 1 : 0;
+                    const bPin = b.is_pinned ? 1 : 0;
+                    if (bPin !== aPin) return bPin - aPin;
+                    if (aPin === 1) return (b.pinned_at_ts || 0) - (a.pinned_at_ts || 0);
+                    return (b.updated_at_ts || 0) - (a.updated_at_ts || 0);
+                });
+            }
+
             showToast(nowPinned ? 'Note pinned' : 'Note unpinned');
 
             const container = document.getElementById('notes-container');
