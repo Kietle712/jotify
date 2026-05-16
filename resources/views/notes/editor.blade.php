@@ -1260,6 +1260,7 @@ async function setNotePassword(e) {
     try {
         await apiCall(`/notes/${noteId}/set-password`, 'POST', { password: pass, password_confirmation: confirm });
         showToast('Password protection enabled');
+        _bustNotesCache();
         window.location.reload();
     } catch(e) {
         showErr(e.error || 'Something went wrong, please try again');
@@ -1306,6 +1307,7 @@ async function submitPasswordAction(e) {
             showToast('Password protection removed');
         }
         document.getElementById('change-pass-modal').classList.add('hidden');
+        _bustNotesCache();
         window.location.reload();
     } catch(err) {
         errEl.textContent = err.error || 'Error';
