@@ -344,16 +344,14 @@ function updateHeaderForEditor() {
     const header = document.querySelector('header');
     if (!header) return;
 
-    const sidebarToggle = header.querySelector('#btn-sidebar-toggle');
-    const children = Array.from(header.children);
-    children.forEach((child) => {
-        if (child === sidebarToggle) return;
-        child.remove();
-    });
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
-        <div class="flex items-center gap-3 flex-1">
+    // Chỉ thay thế nội dung của div.flex-1 —
+    // GIỮ NGUYÊN notification wrapper và dark-mode toggle (siblings của flex-1)
+    const flexSlot = Array.from(header.children).find(c =>
+        c.classList.contains('flex-1') || c.className.includes('flex-1')
+    );
+    if (flexSlot) {
+        flexSlot.className = 'flex items-center gap-3 flex-1';
+        flexSlot.innerHTML = `
             <button onclick="window.offlineRouter.navigateToList()"
                     class="p-2 rounded-lg hover:bg-hover transition-colors"
                     title="Back to notes" style="border:none;background:none;cursor:pointer;">
@@ -363,11 +361,7 @@ function updateHeaderForEditor() {
                 <span class="material-icons-outlined text-sm" style="color:#f59e0b;">cloud_off</span>
                 Offline — saved locally
             </span>
-        </div>
-        <div class="flex items-center gap-1"></div>
-    `;
-    while (wrapper.firstChild) {
-        header.appendChild(wrapper.firstChild);
+        `;
     }
 }
 
@@ -554,6 +548,12 @@ export function initOfflineEvents() {
         console.log('[Router] Back online — syncing pending changes...');
         hideOfflineBanner();
         showSyncBanner();
+        // Khôi phục doSearch gốc khi online lại
+        if (window._offlineDoSearch) {
+            window.doSearch = window._offlineDoSearch;
+            window._offlineDoSearch = null;
+        }
+        window._offlineSearchPatched = false; // cho phép patch lại nếu offline tiếp
         try {
             const result = await syncAllPending(window.csrfToken || '');
             console.log('[Router] Sync result:', result);
@@ -575,11 +575,51 @@ export function initOfflineEvents() {
     window.addEventListener('offline', () => {
         console.log('[Router] Gone offline');
         showOfflineBanner();
+        _patchSearchForOffline();
     });
 
     if (!navigator.onLine) {
         showOfflineBanner();
+        _patchSearchForOffline();
     }
+}
+
+/**
+ * Patch window.doSearch để dùng local filtering khi offline.
+ * Ô search gốc gọi server API → offline thì fail.
+ * Sau khi patch, search filter từ window._notesCache hoặc window.notesState.
+ */
+function _patchSearchForOffline() {
+    if (window._offlineSearchPatched) return; // tránh patch lại
+    window._offlineSearchPatched = true;
+
+    // Lưu hàm gốc để restore khi online
+    const original = window.doSearch;
+    window._offlineDoSearch = original;
+
+    window.doSearch = function(q, label) {
+        // Lấy notes từ cache: _notesCache (set bởi renderNotes) hoặc notesState (offline router)
+        const notes = window._notesCache || window.notesState || [];
+        const query = (q || '').trim().toLowerCase();
+
+        let filtered = [...notes];
+        if (query) {
+            filtered = filtered.filter(n =>
+                (n.title   || '').toLowerCase().includes(query) ||
+                (n.content || '').toLowerCase().includes(query)
+            );
+        }
+        // Filter by label nếu có
+        if (label) {
+            filtered = filtered.filter(n =>
+                Array.isArray(n.labels) && n.labels.some(l => String(l.id) === String(label))
+            );
+        }
+
+        if (window.renderNotes) {
+            window.renderNotes(filtered);
+        }
+    };
 }
 
 // ── Banners ──────────────────────────────────────────────────
