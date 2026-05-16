@@ -216,7 +216,7 @@ document.addEventListener('keydown', function(e) {
 .group:hover .attachment-overlay {
     opacity: 1;
 }
-@media (hover: none), (pointer: coarse) {
+@media (hover: none) {
     .attachment-overlay {
         opacity: 1 !important;
     }
