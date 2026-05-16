@@ -146,9 +146,9 @@
                     </div>
                     @endif
                     @if($note->has_password)
-                    <p class="text-xs text-muted truncate" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>
+                    <p class="text-xs text-muted line-clamp-2" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>
                     @else
-                    <p class="text-xs text-muted truncate">{{ \Str::limit(strip_tags($note->content), 80) }}</p>
+                    <p class="text-xs text-muted line-clamp-2">{{ \Str::limit(strip_tags($note->content), 80) }}</p>
                     @endif
                     {{-- Bottom row: labels + timestamp --}}
                     <div class="flex items-center gap-2 mt-0.5">
