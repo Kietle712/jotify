@@ -652,8 +652,8 @@
     .swipe-reveal .swipe-label { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     .swipe-pin-reveal    { left: 0;  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 0.75rem 0 0 0.75rem; }
     .swipe-delete-reveal { right: 0; background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); border-radius: 0 0.75rem 0.75rem 0; }
-    /* Desktop: ẩn hẳn swipe-reveal — chỉ dùng cho touch */
-    @media (min-width: 640px) {
+    /* Desktop: ẩn hẳn swipe-reveal chỉ trên máy có chuột/hover; tablet và touch device vẫn dùng được */
+    @media (min-width: 640px) and (hover: hover) {
         .swipe-reveal { display: none !important; }
     }
     .swipe-reveal.triggered {
