@@ -1,0 +1,28 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo", "php83Extensions.pdo_mysql", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.zip", "php83Extensions.gd", "php83Extensions.tokenizer", "php83Extensions.fileinfo", "php83Extensions.openssl", "nodejs_22", "nodePackages.npm"]
+
+[phases.install]
+cmds = [
+  "composer install --no-dev --optimize-autoloader --no-interaction",
+  "npm ci",
+  "npm run build"
+]
+
+[phases.build]
+cmds = [
+  "php artisan optimize:clear",
+  "php artisan event:cache"
+]
+
+# ─── IMPORTANT NOTES ──────────────────────────────────────────────────────────
+#
+# config:cache and route:cache are NOT run during build because Railway env
+# vars (APP_KEY, DB_HOST, etc.) are only available at RUNTIME, not during
+# the build phase. Caching config at build time bakes NULL values into the
+# cache → 500 errors at runtime.
+#
+# Instead, config:cache and route:cache run at startup (when env vars exist).
+# ──────────────────────────────────────────────────────────────────────────────
+
+[start]
+cmd = "php artisan config:cache && php artisan route:cache && php artisan view:clear && php artisan view:cache && php artisan migrate --force && php artisan storage:link 2>/dev/null; php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
