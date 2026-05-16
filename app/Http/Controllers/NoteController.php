@@ -267,10 +267,12 @@ class NoteController extends Controller
         $user = Auth::user();
         $note = $user->notes()->findOrFail($id);
 
+        $note->timestamps = false;
         $note->update([
             'has_password' => true,
             'note_password' => Hash::make($request->password),
         ]);
+        $note->timestamps = true;
 
         session(['note_unlocked_' . $note->id => true]);
 
@@ -313,9 +315,11 @@ class NoteController extends Controller
             return response()->json(['error' => 'Current password is incorrect.'], 422);
         }
 
+        $note->timestamps = false;
         $note->update([
             'note_password' => Hash::make($request->password),
         ]);
+        $note->timestamps = true;
 
         return response()->json(['success' => true, 'message' => 'Note password changed.']);
     }
@@ -333,10 +337,12 @@ class NoteController extends Controller
             return response()->json(['error' => 'Password is incorrect.'], 422);
         }
 
+        $note->timestamps = false;
         $note->update([
             'has_password' => false,
             'note_password' => null,
         ]);
+        $note->timestamps = true;
 
         session()->forget('note_unlocked_' . $note->id);
 
