@@ -222,8 +222,8 @@ document.addEventListener('keydown', function(e) {
     }
 }
 </style>
-@endpush
 
+<script>
 @if($share->permission === 'edit')
 
 // ─── Globals (same pattern as ownerLastTitle / ownerLastContent in editor.blade.php) ──
@@ -518,4 +518,7 @@ async function pollReadOnly() {
 }
 setInterval(pollReadOnly, 5000);
 @endif
+</script>
+@endpush
+
 @endsection
