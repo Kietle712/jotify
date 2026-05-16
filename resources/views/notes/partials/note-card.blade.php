@@ -148,7 +148,11 @@
                     @if($note->has_password)
                     <p class="text-xs text-muted line-clamp-2" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>
                     @else
-                    <p class="text-xs text-muted line-clamp-2">{{ \Str::limit(strip_tags($note->content), 80) }}</p>
+                    @php
+                        $previewText = preg_replace('/<\/?(p|div|li|tr|br|h[1-6])[^>]*>/i', "\n", $note->content);
+                        $previewText = \Str::limit(trim(strip_tags($previewText)), 80);
+                    @endphp
+                    <p class="text-xs text-muted" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:pre-line;">{{ $previewText }}</p>
                     @endif
                     {{-- Bottom row: labels + timestamp --}}
                     <div class="flex items-center gap-2 mt-0.5">

@@ -878,6 +878,19 @@
         if (!str) return '';
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
+    // Strip HTML but preserve newlines from block-level elements (p, div, br, li…)
+    function stripHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/<\/?(p|div|li|tr|br|h[1-6])[^>]*>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .trim();
+    }
 
     window.buildNoteCard = function(note) {
         const isGrid    = document.getElementById('notes-container')?.classList.contains('grid');
@@ -1002,7 +1015,7 @@
                             ${badgesRow}
                             ${note.has_password
                                 ? `<p class="text-xs text-muted" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>`
-                                : `<p class="text-xs text-muted" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;">${esc(note.content)}</p>`}
+                                : `<p class="text-xs text-muted" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:pre-line;">${esc(stripHtml(note.content))}</p>`}
                             ${labelsList ? `<div class="flex flex-wrap gap-1 mt-0.5">${labelsList}</div>` : ''}
                             ${thumbGrid}
                         </div>
