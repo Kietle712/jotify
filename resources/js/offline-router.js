@@ -587,7 +587,10 @@ export function initOfflineEvents() {
 /**
  * Patch window.doSearch để dùng local filtering khi offline.
  * Ô search gốc gọi server API → offline thì fail.
- * Sau khi patch, search filter từ window._notesCache hoặc window.notesState.
+ *
+ * Fix: dùng closure-scoped `_snapshot` làm nguồn gốc (source of truth).
+ * Snapshot được capture 1 lần khi đi offline → không bị renderNotes() ghi đè.
+ * Render trực tiếp vào DOM, KHÔNG gọi renderNotes() để tránh corrupt _notesCache.
  */
 function _patchSearchForOffline() {
     if (window._offlineSearchPatched) return; // tránh patch lại
@@ -597,12 +600,38 @@ function _patchSearchForOffline() {
     const original = window.doSearch;
     window._offlineDoSearch = original;
 
-    window.doSearch = function(q, label) {
-        // Lấy notes từ cache: _notesCache (set bởi renderNotes) hoặc notesState (offline router)
-        const notes = window._notesCache || window.notesState || [];
-        const query = (q || '').trim().toLowerCase();
+    // ★ Closure snapshot — immune to renderNotes() overwriting _notesCache
+    let _snapshot = null;
 
-        let filtered = [...notes];
+    // Populate snapshot: notesState (IDB) → _notesCache (last AJAX) → load IDB async
+    async function _initSnapshot() {
+        if (window.notesState && window.notesState.length > 0) {
+            _snapshot = [...window.notesState];
+        } else if (window._notesCache && window._notesCache.length > 0) {
+            _snapshot = [...window._notesCache];
+        } else {
+            // Cả 2 rỗng → load từ IDB (trường hợp vào trang online lần đầu rồi mất mạng)
+            try {
+                await loadNotesState();
+                _snapshot = [...window.notesState];
+            } catch (_) {
+                _snapshot = [];
+            }
+        }
+    }
+    _initSnapshot(); // fire-and-forget — doSearch sẽ chờ snapshot sẵn
+
+    window.doSearch = function(q, label) {
+        // ★ Dùng snapshot thay vì _notesCache/_notesState trực tiếp
+        // → xóa search luôn restore đúng toàn bộ notes
+        const allNotes = (_snapshot && _snapshot.length > 0)
+            ? _snapshot
+            : (window.notesState && window.notesState.length > 0
+                ? window.notesState
+                : []);
+
+        const query = (q || '').trim().toLowerCase();
+        let filtered = [...allNotes];
         if (query) {
             filtered = filtered.filter(n =>
                 (n.title   || '').toLowerCase().includes(query) ||
@@ -616,8 +645,20 @@ function _patchSearchForOffline() {
             );
         }
 
-        if (window.renderNotes) {
-            window.renderNotes(filtered);
+        // ★ Render trực tiếp vào container — KHÔNG gọi renderNotes() để tránh ghi đè _notesCache
+        const container = document.getElementById('notes-container');
+        const noResults  = document.getElementById('no-results-state');
+        if (!container) return;
+
+        if (filtered.length === 0) {
+            container.innerHTML = '';
+            if (noResults) noResults.classList.remove('hidden');
+        } else {
+            if (noResults) noResults.classList.add('hidden');
+            if (typeof window.buildNoteCard === 'function') {
+                container.innerHTML = filtered.map(n => window.buildNoteCard(n)).join('');
+                if (typeof initSwipeGestures === 'function') initSwipeGestures();
+            }
         }
     };
 }
