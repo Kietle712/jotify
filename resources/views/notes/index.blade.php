@@ -997,24 +997,21 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 min-w-0">
                                 <h3 class="font-semibold text-sm truncate flex-1 min-w-0">${esc(note.title) || 'Untitled'}</h3>
+                                <span class="text-xs text-muted whitespace-nowrap note-list-time flex-shrink-0" style="opacity:0.7;">${note.updated_at}</span>
                             </div>
                             ${badgesRow}
                             ${note.has_password
-                                ? `<p class="text-xs text-muted truncate" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>`
-                                : `<p class="text-xs text-muted truncate">${esc(note.content)}</p>`}
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <div class="flex flex-wrap gap-1 flex-1 min-w-0">
-                                    ${labelsList}
-                                </div>
-                                <span class="text-xs text-muted whitespace-nowrap note-list-time flex-shrink-0" style="opacity:0.7;">${note.updated_at}</span>
-                            </div>
+                                ? `<p class="text-xs text-muted" style="font-style:italic;opacity:0.5;">🔒 Content is protected</p>`
+                                : `<p class="text-xs text-muted" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;">${esc(note.content)}</p>`}
+                            ${labelsList ? `<div class="flex flex-wrap gap-1 mt-0.5">${labelsList}</div>` : ''}
+                            ${thumbGrid}
                         </div>
                     </div>
-                    ${thumbGrid}
                 </div>
             </div>`;
 
         }
+
     };
 
 
