@@ -78,7 +78,7 @@
                      class="w-full h-32 object-cover cursor-zoom-in"
                      alt="{{ $image->original_name }}"
                      onclick="openSharedLightbox('{{ asset('storage/' . $image->image_path) }}', '{{ addslashes($image->original_name) }}')">
-                <div class="absolute inset-0 bg-black/50 attachment-overlay flex items-center justify-center pointer-events-none">
+                <div class="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                     <button onclick="deleteSharedImage({{ $image->id }})"
                             class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors pointer-events-auto" title="Delete">
                         <span class="material-icons-outlined text-lg">delete</span>
@@ -207,18 +207,6 @@ document.addEventListener('keydown', function(e) {
     .viewer-img {
         max-width: 50vw;
         max-height: 50vh;
-    }
-}
-.attachment-overlay {
-    opacity: 0;
-    transition: opacity 0.18s ease;
-}
-.group:hover .attachment-overlay {
-    opacity: 1;
-}
-@media (hover: none) and (pointer: coarse) {
-    .attachment-overlay {
-        opacity: 1 !important;
     }
 }
 </style>
@@ -378,7 +366,7 @@ async function uploadSharedImages(files) {
                 <div class="relative group rounded-xl overflow-hidden bg-hover" id="shared-image-${r.image.id}">
                     <img src="${r.image.url}" class="w-full h-32 object-cover cursor-zoom-in" alt="${r.image.original_name}"
                          onclick="openSharedLightbox('${r.image.url}', '${r.image.original_name.replace(/'/g, "\\'")}')">
-                    <div class="absolute inset-0 bg-black/50 attachment-overlay flex items-center justify-center pointer-events-none">
+                    <div class="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                         <button onclick="deleteSharedImage(${r.image.id})"
                                 class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors pointer-events-auto" title="Delete">
                             <span class="material-icons-outlined text-lg">delete</span>
