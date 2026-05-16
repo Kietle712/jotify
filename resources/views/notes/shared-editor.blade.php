@@ -216,12 +216,13 @@ document.addEventListener('keydown', function(e) {
 .group:hover .attachment-overlay {
     opacity: 1;
 }
-@media (hover: none) {
+@media (hover: none) and (pointer: coarse) {
     .attachment-overlay {
         opacity: 1 !important;
     }
 }
 </style>
+@endpush
 
 @if($share->permission === 'edit')
 
