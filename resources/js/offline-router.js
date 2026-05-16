@@ -122,10 +122,16 @@ export async function navigateToList() {
         return;
     }
 
-    // SPA navigation — instant back with updated content from IDB
+    // Offline: dùng ajaxNav để fetch trang từ SW cache → full layout được restore
+    // (search bar, grid/list toggle, notification, dark mode đều còn đủ)
+    // loadNotesOfflineFirst trong index.blade.php sẽ tự render từ IDB sau đó.
+    if (window.ajaxNav) {
+        window.ajaxNav('/notes');
+        return;
+    }
+
+    // Fallback nếu ajaxNav chưa sẵn: render offline-only layout
     history.pushState({}, '', '/notes');
-    // Always reload from IDB so notes are sorted by updated_at
-    // (the editor updates IDB but the in-memory array order is stale)
     await loadNotesState();
     await renderList();
 }
