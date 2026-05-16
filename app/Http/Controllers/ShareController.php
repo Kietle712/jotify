@@ -8,11 +8,9 @@ use App\Models\NoteShare;
 use App\Models\User;
 use App\Models\Notification;
 use App\Events\NoteContentUpdated;
-use App\Jobs\SendNoteSharedEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Services\MailService;
 use Illuminate\Support\Facades\Storage;
 
 class ShareController extends Controller
