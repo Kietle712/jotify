@@ -139,23 +139,32 @@
 
             {{-- Preview (hidden when locked) --}}
             @if(!$share->note->has_password)
-            <p class="text-xs text-muted line-clamp-3 mb-3 flex-1">
-                {{ \Str::limit(strip_tags($share->note->content), 120) }}
-            </p>
+            @php
+                $sharedPreview = preg_replace('/<\/?(p|div|li|tr|br|h[1-6])[^>]*>/i', "\n", $share->note->content);
+                $sharedPreview = \Str::limit(trim(strip_tags($sharedPreview)), 120);
+            @endphp
+            <p class="text-xs text-muted mb-3 flex-1" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-line;">{{ $sharedPreview }}</p>
             @else
             <p class="text-xs text-muted mb-3 italic">🔒 Content is password protected</p>
             @endif
 
-            {{-- Image thumbnail (hidden when locked) --}}
+            {{-- Image grid (hidden when locked) --}}
             @if(!$share->note->has_password && $share->note->images->count() > 0)
-            <div class="note-thumb-wrap" style="margin-bottom:0.5rem;">
-                <img src="{{ asset('storage/' . $share->note->images->first()->image_path) }}"
-                     alt="Attachment"
-                     class="w-full rounded-lg object-cover" style="max-height:120px;"
-                     loading="lazy">
-                @if($share->note->images->count() > 1)
-                <span class="text-[10px] text-muted">+{{ $share->note->images->count() - 1 }} more</span>
-                @endif
+            @php
+                $sharedImgs  = $share->note->images->take(4);
+                $sharedTotal = $share->note->images->count();
+                $sharedCount = min($sharedTotal, 4);
+            @endphp
+            <div class="note-img-grid note-img-grid--{{ $sharedCount }} mt-2 mb-2">
+                @foreach($sharedImgs as $si => $simage)
+                <div class="note-img-cell {{ ($si === 3 && $sharedTotal > 4) ? 'note-img-cell--more' : '' }}"
+                     data-more="{{ $sharedTotal > 4 ? '+'.($sharedTotal - 4) : '' }}">
+                    <img src="{{ asset('storage/' . $simage->image_path) }}"
+                         alt="Attachment"
+                         class="note-img-thumb"
+                         loading="lazy">
+                </div>
+                @endforeach
             </div>
             @endif
 
@@ -229,6 +238,29 @@
 #shared-notes-container.list-mode .shared-card-grid { display:none; }
 #shared-notes-container.list-mode .shared-card-list { display:flex; }
 #shared-notes-container:not(.list-mode) .shared-card-list { display:none; }
+
+/* ── note-img-grid (shared from index.blade.php) ── */
+.note-img-grid {
+    display: grid; gap: 2px; width: 100%;
+    border-radius: 0.625rem; overflow: hidden;
+    flex-shrink: 0; background: rgba(0,0,0,0.04);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.note-img-grid--1 { grid-template-columns: 1fr; aspect-ratio: 16/9; }
+.note-img-grid--2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16/7; }
+.note-img-grid--3 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+.note-img-grid--3 .note-img-cell:first-child { grid-column: 1/-1; aspect-ratio: 16/7; }
+.note-img-grid--3 .note-img-cell:not(:first-child) { aspect-ratio: 1/1; }
+.note-img-grid--4 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+.note-img-grid--4 .note-img-cell { aspect-ratio: 1/1; }
+.note-img-cell { position:relative; overflow:hidden; background:rgba(0,0,0,0.06); }
+.note-img-thumb { width:100%; height:100%; object-fit:cover; display:block; }
+.note-img-cell--more::after {
+    content: attr(data-more); position:absolute; inset:0;
+    background:rgba(0,0,0,0.52); color:#fff; font-size:1.1rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(2px);
+}
 
 /* List mode container */
 #shared-notes-container.list-mode { display:flex; flex-direction:column; gap:0.5rem; }

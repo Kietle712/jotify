@@ -75,11 +75,16 @@
             @foreach($share->note->images as $image)
             <div class="relative group rounded-xl overflow-hidden bg-hover" id="shared-image-{{ $image->id }}">
                 <img src="{{ asset('storage/' . $image->image_path) }}"
-                     class="w-full h-32 object-cover"
-                     alt="{{ $image->original_name }}">
-                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     class="w-full h-32 object-cover cursor-zoom-in"
+                     alt="{{ $image->original_name }}"
+                     onclick="openSharedLightbox('{{ asset('storage/' . $image->image_path) }}', '{{ addslashes($image->original_name) }}')">
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button onclick="openSharedLightbox('{{ asset('storage/' . $image->image_path) }}', '{{ addslashes($image->original_name) }}')"
+                            class="p-2 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors" title="View">
+                        <span class="material-icons-outlined text-lg">zoom_in</span>
+                    </button>
                     <button onclick="deleteSharedImage({{ $image->id }})"
-                            class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors">
+                            class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors" title="Delete">
                         <span class="material-icons-outlined text-lg">delete</span>
                     </button>
                 </div>
@@ -115,10 +120,14 @@
         </h4>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             @foreach($share->note->images as $image)
-            <div class="rounded-xl overflow-hidden bg-hover">
+            <div class="rounded-xl overflow-hidden bg-hover group relative cursor-zoom-in"
+                 onclick="openSharedLightbox('{{ asset('storage/' . $image->image_path) }}', '{{ addslashes($image->original_name) }}')">
                 <img src="{{ asset('storage/' . $image->image_path) }}"
-                     class="w-full h-32 object-cover"
+                     class="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
                      alt="{{ $image->original_name }}">
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <span class="material-icons-outlined text-white opacity-0 group-hover:opacity-100 transition-opacity" style="font-size:2rem;">zoom_in</span>
+                </div>
                 <p class="text-[10px] text-muted px-2 py-1 truncate">{{ $image->original_name }}</p>
             </div>
             @endforeach
@@ -128,9 +137,53 @@
 </div>
 @endif
 
+{{-- ── Shared Image Lightbox ────────────────────────────────────────────── --}}
+<div id="shared-lightbox"
+     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;cursor:zoom-out;"
+     onclick="closeSharedLightbox()">
+    <button onclick="closeSharedLightbox()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.15);
+            border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;
+            justify-content:center;color:#fff;transition:background 0.2s;" onmouseenter="this.style.background='rgba(255,255,255,0.3)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'">
+        <span class="material-icons-outlined" style="font-size:1.5rem;">close</span>
+    </button>
+    <img id="shared-lightbox-img" src="" alt=""
+         style="max-width:90vw;max-height:88vh;object-fit:contain;border-radius:0.5rem;
+                box-shadow:0 25px 60px rgba(0,0,0,0.6);cursor:default;"
+         onclick="event.stopPropagation()">
+    <p id="shared-lightbox-caption"
+       style="position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);
+              color:rgba(255,255,255,0.7);font-size:0.75rem;max-width:80vw;text-align:center;
+              text-overflow:ellipsis;overflow:hidden;white-space:nowrap;"></p>
+</div>
+
 @push('scripts')
 <script>
 const shareId = {{ $share->id }};
+
+// ── Shared Lightbox ──────────────────────────────────────────────────────────
+function openSharedLightbox(url, caption) {
+    const lb  = document.getElementById('shared-lightbox');
+    const img = document.getElementById('shared-lightbox-img');
+    const cap = document.getElementById('shared-lightbox-caption');
+    if (!lb || !img) return;
+    img.src = url;
+    img.alt = caption || '';
+    if (cap) cap.textContent = caption || '';
+    lb.style.display = 'flex';
+    lb.getBoundingClientRect(); // force reflow for transition
+    lb.style.opacity = '1';
+    document.body.style.overflow = 'hidden';
+}
+function closeSharedLightbox() {
+    const lb = document.getElementById('shared-lightbox');
+    if (!lb) return;
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSharedLightbox();
+});
 
 @if($share->permission === 'edit')
 
@@ -284,10 +337,15 @@ async function uploadSharedImages(files) {
             const grid = document.getElementById('shared-images-grid');
             grid.insertAdjacentHTML('beforeend', `
                 <div class="relative group rounded-xl overflow-hidden bg-hover" id="shared-image-${r.image.id}">
-                    <img src="${r.image.url}" class="w-full h-32 object-cover" alt="${r.image.original_name}">
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <img src="${r.image.url}" class="w-full h-32 object-cover cursor-zoom-in" alt="${r.image.original_name}"
+                         onclick="openSharedLightbox('${r.image.url}', '${r.image.original_name.replace(/'/g, "\\'")}')"> 
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button onclick="openSharedLightbox('${r.image.url}', '${r.image.original_name.replace(/'/g, "\\'")}')"
+                                class="p-2 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors" title="View">
+                            <span class="material-icons-outlined text-lg">zoom_in</span>
+                        </button>
                         <button onclick="deleteSharedImage(${r.image.id})"
-                                class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors">
+                                class="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors" title="Delete">
                             <span class="material-icons-outlined text-lg">delete</span>
                         </button>
                     </div>
