@@ -1420,7 +1420,6 @@
             if (pinBtn)  { pinBtn.classList.toggle('is-pinned', nowPinned); pinBtn.title = nowPinned ? 'Unpin' : 'Pin'; }
             if (pinIcon) { pinIcon.style.color = nowPinned ? '#f59e0b' : ''; }
             if (swipeLabel) swipeLabel.textContent = nowPinned ? 'Unpin' : 'Pin';
-            _updatePinBadge(card, nowPinned);
 
             // Sync pin state back into _notesCache so switchView re-renders correctly
             if (window._notesCache) {
@@ -1436,6 +1435,21 @@
                     if (aPin === 1) return (b.pinned_at_ts || 0) - (a.pinned_at_ts || 0);
                     return (b.updated_at_ts || 0) - (a.updated_at_ts || 0);
                 });
+            }
+
+            // Re-render this card fully so pin badge renders correctly in both grid and list views.
+            // _updatePinBadge only handles .pin-badge-below-title; cards built by buildNoteCard
+            // render the pin badge inside badgesRow — a different DOM structure that _updatePinBadge
+            // cannot reach. A full re-render is the only reliable fix.
+            if (window.buildNoteCard && window._notesCache) {
+                const noteData = window._notesCache.find(n => String(n.id) === String(noteId));
+                if (noteData) {
+                    const oldWrapper = card.closest('.note-card-wrapper') || card.closest('.swipe-row');
+                    if (oldWrapper) {
+                        oldWrapper.insertAdjacentHTML('afterend', window.buildNoteCard(noteData));
+                        oldWrapper.remove();
+                    }
+                }
             }
 
             showToast(nowPinned ? 'Note pinned' : 'Note unpinned');
